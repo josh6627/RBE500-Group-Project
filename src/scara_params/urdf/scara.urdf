@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<robot name="one_joint_arm">
+
+  <material name="gray">
+    <color rgba="0.5 0.5 0.5 1"/>
+  </material>
+
+  <material name="blue">
+    <color rgba="0.1 0.3 0.9 1"/>
+  </material>
+
+  <!-- Fixed base because each joint neads to links to be created -->
+  <link name="base">
+    <visual>
+      <origin xyz="0 0 0.15" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.3 0.3 0.3"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0.15" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.3 0.3 0.3"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0.15" rpy="0 0 0"/>
+      <mass value="5.0"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+  </link>
+
+  <!-- Revolute joint -->
+  <joint name="joint1" type="revolute">
+    <parent link="base"/>
+    <child link="link_1"/>
+
+    <!-- Put the joint on top of the base -->
+    <origin xyz="0 0 0.35" rpy="0 0 0"/>
+
+    <!-- Rotate around vertical z-axis -->
+    <axis xyz="0 0 1"/>
+
+    <limit lower="-3.14" upper="3.14" effort="20" velocity="1"/>
+  </joint>
+
+  <!-- Moving arm link -->
+  <link name="link_1">
+    <visual>
+      <!--] The arm is 1 meter long and centered at x = 0.5 -->
+      <origin xyz="0 0 0.5" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.08 0.08 1.0"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0.5 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="1.0 0.08 0.08"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0.5 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+  </link>
+
+
+
+  <!-- Publish joint values from Gazebo -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>/joint_states</topic>
+      <joint_name>joint1</joint_name>
+    </plugin>
+  </gazebo>
+
+</robot>
