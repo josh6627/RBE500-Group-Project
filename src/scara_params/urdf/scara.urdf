@@ -1,5 +1,14 @@
+<!--
+  Launching gazebo:
+      ros2 launch ros_gz_sim gz_sim.launch.py gz_args:=empty.sdf
+
+  Spawning robot: (change file path)
+       ros2 launch ros_gz_sim gz_spawn_model.launch.py   world:=empty   file:=$HOME/Robotics/rbe500/group-project/src/scara_params/urdf/scara.urdf   entity_name:=arm   x:=0.0 y:=0.0 z:=0.0
+
+-->
+
 <?xml version="1.0"?>
-<robot name="one_joint_arm">
+<robot name="arm">
 
   <material name="gray">
     <color rgba="0.5 0.5 0.5 1"/>
