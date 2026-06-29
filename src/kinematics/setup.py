@@ -11,11 +11,14 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=[
+        'setuptools', 
+        'numpy'
+        ],
     zip_safe=True,
     maintainer='josh',
     maintainer_email='josh051915@gmail.com',
-    description='TODO: Package description',
+    description='RBE500 Project; Nick Smith; Josh Chu',
     license='TODO: License declaration',
     extras_require={
         'test': [
@@ -24,6 +27,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'forward = forward_kinematics_node:main',
+            'inverse = inverse_kinematics_node:main',
         ],
     },
 )
