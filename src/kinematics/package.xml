@@ -3,12 +3,13 @@
 <package format="3">
   <name>kinematics</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>RBE500 Project; Nick Smith; Josh Chu</description>
   <maintainer email="josh051915@gmail.com">josh</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
+  <depend>numpy</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
