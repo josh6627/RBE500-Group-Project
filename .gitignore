@@ -12,6 +12,7 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+run.sh
 
 # VS Code
 .vscode/
