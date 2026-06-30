@@ -32,8 +32,10 @@ class ForwardKinematicsNode(Node):
             ]
         )
 
-    def listener_callback(self, msg):
-        pass
+    def listener_callback(self, msg: JointState):
+        joint_angles = msg.position
+        ht_matrix = self._compute_forward_kinematics(joint_angles)
+        self.get_logger().info(f"HT Matrix {ht_matrix}")
 
     def _compute_forward_kinematics(self, joint_vars: list) -> np.ndarray:
 
