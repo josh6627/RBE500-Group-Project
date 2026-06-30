@@ -68,6 +68,7 @@ class ForwardKinematicsNode(Node):
 
         return pose_msg
 
+    # convert the rotation matrix into a quaturnion
     def rotation_matrix_to_quaternion(self, R):
         trace = R[0, 0] + R[1, 1] + R[2, 2]
 
