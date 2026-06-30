@@ -4,9 +4,10 @@ from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
 import numpy as np
 
+
 class InverseKinematicsNode(Node):
     def __init__(self):
-        super().__init__('inverse_kinematics_node')
+        super().__init__("inverse_kinematics_node")
 
     def listener_callback(self):
         pass
@@ -24,5 +25,6 @@ def main(args=None):
     node.destroy_node()
     rclpy.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
