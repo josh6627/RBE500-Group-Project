@@ -41,7 +41,7 @@
     </inertial>
   </link>
 
-  <!-- Revolute joint -->
+  <!-- Joint 1 (located at the base of the robot) -->
   <joint name="joint_1" type="revolute">
     <parent link="base"/>
     <child link="link_1"/>
@@ -191,6 +191,7 @@
       <topic>/joint_states</topic>
       <joint_name>joint_1</joint_name>
       <joint_name>joint_2</joint_name>
+      <joint_name>joint_3</joint_name>
     </plugin>
   </gazebo>
 

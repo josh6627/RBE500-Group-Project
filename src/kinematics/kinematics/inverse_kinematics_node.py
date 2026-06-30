@@ -17,7 +17,7 @@ class InverseKinematicsNode(Node):
 
 
 def main(args=None):
-    rclpy.init(args)
+    rclpy.init(args=args)
 
     node = InverseKinematicsNode()
     rclpy.spin(node)
