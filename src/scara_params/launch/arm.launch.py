@@ -56,10 +56,20 @@ def generate_launch_description():
         output="screen",
     )
 
+    robot_geometry = {
+        "link_1_length": 1.0,
+        "link_2_length": 1.0,
+        "link_3_length": 1.0,
+        "joint_3_offset": 0.04,
+        "joint_3_min": 0.0,
+        "joint_3_max": 0.5,
+    }
+    
     fk_node = Node(
         package="kinematics_cpp",
         executable="fwd_kinematics",
         name="fwd_kinematics",
+        parameters=[robot_geometry],
         output="screen",
     )
 
@@ -67,6 +77,7 @@ def generate_launch_description():
         package="kinematics_cpp",
         executable="inv_kinematics",
         name="fwd_kinematics",
+        parameters=[robot_geometry],
         output="screen",
     )
 

@@ -1,6 +1,6 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/rclcpp.hpp" // IWYU pragma: keep
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <Eigen/Dense>
 #include <Eigen/Geometry>

@@ -1,5 +1,5 @@
 #include "kinematics_cpp/srv/ik.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/rclcpp.hpp" // IWYU pragma: keep
 #include <Eigen/Dense>
 #include <Eigen/src/Core/Matrix.h>
 #include <algorithm>
@@ -190,11 +190,11 @@ class InverseKinematics final : public rclcpp::Node {
 
     rclcpp::Service<IK>::SharedPtr ik_service_;
 };
+} // namespace kinematics_cpp
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<InverseKinematics>());
+    rclcpp::spin(std::make_shared<kinematics_cpp::InverseKinematics>());
     rclcpp::shutdown();
     return 0;
 }
-} // namespace kinematics_cpp
