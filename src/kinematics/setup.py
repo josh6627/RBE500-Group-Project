@@ -22,9 +22,10 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
-            'forward = kinematics.forward_kinematics_node:main',
-            'inverse = kinematics.inverse_kinematics_node:main',
+        "console_scripts": [
+            "forward = kinematics.forward_kinematics_node:main",
+            "inverse = kinematics.inverse_kinematics_node:main",
+            "controller = kinematics.position_controller_node:main",
         ],
     },
 )

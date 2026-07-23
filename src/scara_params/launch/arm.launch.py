@@ -19,7 +19,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(ros_gz_sim_pkg, "launch", "gz_sim.launch.py")
         ),
-        launch_arguments={"gz_args": "empty.sdf"}.items(),
+        launch_arguments={"gz_args": "-v 4 empty.sdf"}.items(),
     )
 
     spawn_arm = Node(
@@ -45,27 +45,41 @@ def generate_launch_description():
     joint_state_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        arguments=["/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model"],
+        arguments=[
+            # Gazebo -> ROS
+            "/joint_states" "@sensor_msgs/msg/JointState" "[gz.msgs.Model",
+            # ROS -> Gazebo
+            "/model/arm/joint/joint_3/cmd_force"
+            "@std_msgs/msg/Float64"
+            "]gz.msgs.Double",
+        ],
         output="screen",
     )
 
     fk_node = Node(
-        package="kinematics",
-        executable="forward",
+        package="kinematics_cpp",
+        executable="fwd_kinematics",
+        name="fwd_kinematics",
         output="screen",
     )
 
     ik_node = Node(
-        package="kinematics",
-        executable="inverse",
+        package="kinematics_cpp",
+        executable="inv_kinematics",
+        name="fwd_kinematics",
         output="screen",
     )
 
+    controller_node = Node(
+        package="kinematics",
+        executable="controller",
+        output="screen",
+    )
     return LaunchDescription(
         [
-            gazebo,
-            TimerAction(period=2.0, actions=[spawn_arm]),
-            TimerAction(period=4.0, actions=[joint_state_bridge]),
-            TimerAction(period=5.0, actions=[fk_node, ik_node]),
+            # gazebo,
+            # TimerAction(period=6.0, actions=[spawn_arm]),
+            # TimerAction(period=8.0, actions=[joint_state_bridge]),
+            TimerAction(period=9.0, actions=[fk_node, ik_node]),
         ]
     )

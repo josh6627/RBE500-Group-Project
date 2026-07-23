@@ -14,6 +14,15 @@ install(
   DIRECTORY urdf launch
   DESTINATION share/${PROJECT_NAME}
 )
+
+# Find the interface generator
+find_package(rosidl_default_generators REQUIRED)
+
+# Generate the custom service
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/SetTargetPosition.srv"
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

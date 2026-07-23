@@ -61,7 +61,7 @@ class InverseKinematicsNode(Node):
         R_sqr = Ex**2 + Ey**2
         
         #Compute theta1
-        D1 = (R_sqr + self.L2**2 - self.L3) / (2*self.L2*np.sqrt(R_sqr))
+        D1 = (R_sqr + self.L2**2 - self.L3**2) / (2*self.L2*np.sqrt(R_sqr))
         C1 = np.array([-1, 1]) * np.sqrt(1 - D1**2)         # +- sqrt(1 - D1**2)
         theta1 = np.arctan2(C1, D1)
         

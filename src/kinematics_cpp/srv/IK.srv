@@ -1,0 +1,6 @@
+geometry_msgs/Pose target_pose
+---
+bool success
+uint8 solution_count
+float64[] joint_solutions
+string message
