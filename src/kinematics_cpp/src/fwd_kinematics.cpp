@@ -8,13 +8,14 @@
 #include <memory>
 #include <vector>
 
-using namespace geometry_msgs::msg;
-using JointState = sensor_msgs::msg::JointState;
-using namespace rclcpp;
-class ForwardKinematics : public Node {
+class ForwardKinematics : public rclcpp::Node {
+    using JointState = sensor_msgs::msg::JointState;
+    using PoseStamped = geometry_msgs::msg::PoseStamped;
 
   public:
     ForwardKinematics() : Node("forward_kinematics") {
+        declare_parameters();
+        load_parameters();
         joint_subscription_ = this->create_subscription<JointState>(
             "/joint_states",
             10,
@@ -24,6 +25,59 @@ class ForwardKinematics : public Node {
     }
 
   private:
+    /**
+     * @brief declares default parameter values if no values were assigned
+     *
+     */
+    void declare_parameters() {
+        declare_parameter<double>("link_1_length", 1.0);
+        declare_parameter<double>("link_2_length", 1.0);
+        declare_parameter<double>("link_3_length", 1.0);
+        declare_parameter<double>("joint_3_offset", 0.04);
+        declare_parameter<double>("joint_3_min", 0.0);
+        declare_parameter<double>("joint_3_max", 0.5);
+    }
+
+    /**
+     * @brief loads parameters from launch files and ensures they are valid
+     *
+     */
+    void load_parameters() {
+        link_1_length_ = get_parameter("link_1_length").as_double();
+        link_2_length_ = get_parameter("link_2_length").as_double();
+        link_3_length_ = get_parameter("link_3_length").as_double();
+        joint_3_offset_ = get_parameter("joint_3_offset").as_double();
+        joint_3_min_ = get_parameter("joint_3_min").as_double();
+        joint_3_max_ = get_parameter("joint_3_max").as_double();
+
+        if (link_1_length_ <= 0.0 || link_2_length_ <= 0.0 || link_3_length_ <= 0.0) {
+            throw std::invalid_argument("link lengths must be greater than zero");
+        }
+        if (joint_3_min_ > joint_3_max_) {
+            throw std::invalid_argument("joint 3 minimum cannot be greater than maximum");
+        }
+        RCLCPP_INFO(
+            get_logger(),
+            "ARM Geometry: Link 1=%.3f, Link 2=%.3f, Link 3=%.3f, joint 3 offset=%.3f, prismatic "
+            "range=[%.3f, %.3f]",
+            link_1_length_,
+            link_2_length_,
+            link_3_length_,
+            joint_3_offset_,
+            joint_3_min_,
+            joint_3_max_
+        );
+    }
+
+    /**
+     * @brief DH transform calculator
+     *
+     * @param theta rotation in Z
+     * @param d translation in Z
+     * @param a translation in X
+     * @param alpha translation in Y
+     * @return Eigen::Matrix4d
+     */
     Eigen::Matrix4d dh(double theta, double d, double a, double alpha) const {
         const double ct = std::cos(theta);
         const double st = std::sin(theta);
@@ -38,6 +92,11 @@ class ForwardKinematics : public Node {
         return transform;
     }
 
+    /**
+     * @brief takes a set of joint variables and returns the corresponding pose
+     *
+     * @param msg corresponding pose
+     */
     void topic_callback(JointState::ConstSharedPtr msg) {
         const std::vector<double> &joint_variables = msg->position;
         if (joint_variables.size() != 3) {
@@ -49,14 +108,26 @@ class ForwardKinematics : public Node {
         pose_publisher_->publish(pose_msg);
     }
 
+    /**
+     * @brief computes forward kinematics using DH method
+     *
+     * @param joint_variables joint angles/lengths
+     * @return Eigen::Matrix4d Complete transformation from base to EE
+     */
     Eigen::Matrix4d compute_fk(const std::vector<double> &joint_variables) const {
-        Eigen::Matrix4d T01 = dh(joint_variables[0], 1, 1, 0);
-        Eigen::Matrix4d T12 = dh(joint_variables[1], 0, 1, 0);
-        Eigen::Matrix4d T23 = dh(0, -joint_variables[2] - 0.04, 0, 0);
+        Eigen::Matrix4d T01 = dh(joint_variables[0], link_1_length_, link_2_length_, 0);
+        Eigen::Matrix4d T12 = dh(joint_variables[1], 0, link_3_length_, 0);
+        Eigen::Matrix4d T23 = dh(0, -joint_variables[2] - joint_3_offset_, 0, 0);
         Eigen::Matrix4d T03 = T01 * T12 * T23;
         return T03;
     }
 
+    /**
+     * @brief Converts the HT matrix to a readable pose message
+     *
+     * @param ht_matrix
+     * @return PoseStamped
+     */
     PoseStamped ht_matrix_to_pose_msg(const Eigen::Matrix4d &ht_matrix) const {
         PoseStamped pose_msg = PoseStamped();
         pose_msg.header.stamp = this->now();
@@ -75,19 +146,33 @@ class ForwardKinematics : public Node {
         return pose_msg;
     }
 
+    /**
+     * @brief converst euler angles to quaturnion
+     *
+     * @param rotation
+     * @return Eigen::Quaterniond
+     */
     Eigen::Quaterniond rotation_matrix_to_quaternion(const Eigen::Matrix3d &rotation) const {
         Eigen::Quaterniond quaternion(rotation);
         quaternion.normalize();
         return quaternion;
     }
 
-    Subscription<JointState>::SharedPtr joint_subscription_;
-    Publisher<PoseStamped>::SharedPtr pose_publisher_;
+    // Arm constants
+    double link_1_length_{};
+    double link_2_length_{};
+    double link_3_length_{};
+    double joint_3_offset_{};
+    double joint_3_min_{};
+    double joint_3_max_{};
+
+    rclcpp::Subscription<JointState>::SharedPtr joint_subscription_;
+    rclcpp::Publisher<PoseStamped>::SharedPtr pose_publisher_;
 };
 
 int main(int argc, char *argv[]) {
-    init(argc, argv);
-    spin(std::make_shared<ForwardKinematics>());
-    shutdown();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<ForwardKinematics>());
+    rclcpp::shutdown();
     return 0;
 }
