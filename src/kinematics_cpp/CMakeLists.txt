@@ -17,15 +17,34 @@ find_package(Eigen3 REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/IK.srv"
+  "srv/SetJointTarget.srv"
   DEPENDENCIES geometry_msgs
 )
 
-add_executable(fwd_kinematics
+add_library(pid
+  src/PID.cpp
+)
+
+target_include_directories(
+  pid
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+add_executable(
+  fwd_kinematics
   src/fwd_kinematics.cpp
 )
 
-add_executable(inv_kinematics
+add_executable(
+  inv_kinematics
   src/inv_kinematics.cpp
+)
+
+add_executable(
+  controller
+  src/position_controller.cpp
 )
 
 ament_target_dependencies(
@@ -42,6 +61,14 @@ ament_target_dependencies(
   geometry_msgs
 )
 
+ament_target_dependencies(
+  controller
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+)
+
 target_link_libraries(
   fwd_kinematics
   Eigen3::Eigen
@@ -50,6 +77,19 @@ target_link_libraries(
 target_link_libraries(
   inv_kinematics
   Eigen3::Eigen
+)
+
+target_link_libraries(
+  controller
+  pid
+  Eigen3::Eigen
+)
+
+target_include_directories(
+  controller
+  PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
 rosidl_get_typesupport_target(
@@ -63,17 +103,39 @@ target_link_libraries(
   "${cpp_typesupport_target}"
 )
 
+target_link_libraries(
+  controller
+  "${cpp_typesupport_target}"
+)
+
 add_dependencies(
   inv_kinematics
   ${PROJECT_NAME}__rosidl_generator_cpp
 )
 
+add_dependencies(
+  controller
+  ${PROJECT_NAME}__rosidl_generator_cpp
+)
+
 install(
   TARGETS
+    pid
     fwd_kinematics
     inv_kinematics
-  DESTINATION lib/${PROJECT_NAME}
+    controller
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+ament_export_include_directories(include)
+ament_export_dependencies(rosidl_default_runtime)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

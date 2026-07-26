@@ -207,8 +207,6 @@ class PositionControllerNode(Node):
         effort_message.data = float(effort)
         self.effort_publisher.publish(effort_message)
 
-        # Record reference and measured positionsThe VEX extension generates that file with the correct VEX include directories. Do not replace it with a normal Linux GCC configuration.
-
         elapsed_time_from_start = (current_time - self.start_time).nanoseconds / 1.0e9
         self.log_writer.writerow(
             [
