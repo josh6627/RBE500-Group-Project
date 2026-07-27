@@ -7,7 +7,6 @@
 #include <cmath>
 #include <cstddef>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -15,7 +14,7 @@
 namespace kinematics_cpp {
 class PositionController final : public rclcpp::Node {
     using JointState = sensor_msgs::msg::JointState;
-    using SetJointTarget = kinematics_cpp::srv::SetJointTarget;
+    using SetJointTarget = srv::SetJointTarget;
 
   public:
     PositionController() : Node("position_controller") {
