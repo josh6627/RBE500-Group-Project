@@ -68,6 +68,12 @@
     <parent link="base"/>
     <child link="link_1"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit
+      lower="-3.14159"
+      upper="3.14159"
+      effort="100.0"
+      velocity="2.0"/>
   </joint>
 
   <!-- L-shaped link 1 -->
@@ -122,6 +128,12 @@
     <parent link="link_1"/>
     <child link="link_2"/>
     <origin xyz="1.0 0 1.0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit
+      lower="-3.14159"
+      upper="3.14159"
+      effort="100.0"
+      velocity="2.0"/>
   </joint>
 
   <!-- Link 2 -->
@@ -263,24 +275,24 @@
   <gazebo>
     <plugin
       filename="gz-sim-apply-joint-force-system"
-      name="gz::sim::systems::ApplyJointForceJoint1">
+      name="gz::sim::systems::ApplyJointForce">
 
-      <joint_name>joint_3</joint_name>
+      <joint_name>joint_1</joint_name>
     </plugin>
   </gazebo>  <!-- Apply force commands to joint_2 -->
   <gazebo>
     <plugin
       filename="gz-sim-apply-joint-force-system"
-      name="gz::sim::systems::ApplyJointForceJoint2">
+      name="gz::sim::systems::ApplyJointForce">
 
-      <joint_name>joint_3</joint_name>
+      <joint_name>joint_2</joint_name>
     </plugin>
   </gazebo>
   <!-- Apply force commands to joint_3 -->
   <gazebo>
     <plugin
       filename="gz-sim-apply-joint-force-system"
-      name="gz::sim::systems::ApplyJointForceJoint3">
+      name="gz::sim::systems::ApplyJointForce">
 
       <joint_name>joint_3</joint_name>
     </plugin>
