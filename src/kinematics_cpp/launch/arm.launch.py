@@ -53,12 +53,10 @@ def generate_launch_description():
         package="ros_gz_bridge",
         executable="parameter_bridge",
         arguments=[
-            # Gazebo -> ROS
-            "/joint_states" "@sensor_msgs/msg/JointState" "[gz.msgs.Model",
-            # ROS -> Gazebo
-            "/model/arm/joint/joint_3/cmd_force"
-            "@std_msgs/msg/Float64"
-            "]gz.msgs.Double",
+            "/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model",
+            "/model/arm/joint/joint_1/cmd_force@std_msgs/msg/Float64]gz.msgs.Double",
+            "/model/arm/joint/joint_2/cmd_force@std_msgs/msg/Float64]gz.msgs.Double",
+            "/model/arm/joint/joint_3/cmd_force@std_msgs/msg/Float64]gz.msgs.Double",
         ],
         output="screen",
     )
@@ -83,7 +81,7 @@ def generate_launch_description():
     ik_node = Node(
         package="kinematics_cpp",
         executable="inv_kinematics",
-        name="fwd_kinematics",
+        name="inv_kinematics",
         parameters=[robot_geometry],
         output="screen",
     )
@@ -103,33 +101,31 @@ def generate_launch_description():
     )
     return LaunchDescription(
         [
-        gazebo,
+            gazebo,
 
-    RegisterEventHandler(
-        OnProcessStart(
-            target_action=gazebo,
-            on_start=[spawn_arm],
-        )
-    ),
+            TimerAction(
+                period=3.0,
+                actions=[spawn_arm],
+            ),
 
-    RegisterEventHandler(
-        OnProcessExit(
-            target_action=spawn_arm,
-            on_exit=[joint_state_bridge],
-        )
-    ),
+            RegisterEventHandler(
+                OnProcessExit(
+                    target_action=spawn_arm,
+                    on_exit=[joint_state_bridge],
+                )
+            ),
 
-    RegisterEventHandler(
-        OnProcessStart(
-            target_action=joint_state_bridge,
-            on_start=[
-                fk_node,
-                ik_node,
-                controller_node,
-                velocity_kinematics_node,
-            ],
-        )
-    ),
+            RegisterEventHandler(
+                OnProcessStart(
+                    target_action=joint_state_bridge,
+                    on_start=[
+                        fk_node,
+                        ik_node,
+                        controller_node,
+                        velocity_kinematics_node,
+                    ],
+                )
+            ),
         ]
     )
 

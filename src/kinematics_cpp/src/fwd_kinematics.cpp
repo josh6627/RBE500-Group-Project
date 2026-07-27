@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -101,12 +102,31 @@ class ForwardKinematics : public rclcpp::Node {
      * @param msg corresponding pose
      */
     void topic_callback(JointState::ConstSharedPtr msg) {
-        const std::vector<double> &joint_variables = msg->position;
-        if (joint_variables.size() != 3) {
+        if (msg->name.size() != msg->position.size()) {
+            RCLCPP_WARN(get_logger(), "JointState names and positions have different sizes");
+            return;
+        }
+        bool found_joint_1 = false;
+        bool found_joint_2 = false;
+        bool found_joint_3 = false;
+
+        for (std::size_t i = 0; i < msg->name.size(); i++) {
+            if (msg->name[i] == "joint_1") {
+                joint_variables_[0] = msg->position[i];
+                found_joint_1 = true;
+            } else if (msg->name[i] == "joint_2") {
+                joint_variables_[1] = msg->position[i];
+                found_joint_2 = true;
+            } else if (msg->name[i] == "joint_3") {
+                joint_variables_[2] = msg->position[i];
+                found_joint_3 = true;
+            }
+        }
+        if (!found_joint_1 || !found_joint_2 || !found_joint_3) {
             RCLCPP_WARN(get_logger(), "Expected 3 joint positions");
             return;
         }
-        const Eigen::Matrix4d HT_matrix = compute_fk(joint_variables);
+        const Eigen::Matrix4d HT_matrix = compute_fk(joint_variables_);
         const PoseStamped pose_msg = ht_matrix_to_pose_msg(HT_matrix);
         pose_publisher_->publish(pose_msg);
     }
@@ -168,6 +188,7 @@ class ForwardKinematics : public rclcpp::Node {
     double joint_3_offset_{};
     double joint_3_min_{};
     double joint_3_max_{};
+    std::vector<double> joint_variables_{0.0, 0.0, 0.0};
 
     rclcpp::Subscription<JointState>::SharedPtr joint_subscription_;
     rclcpp::Publisher<PoseStamped>::SharedPtr pose_publisher_;
