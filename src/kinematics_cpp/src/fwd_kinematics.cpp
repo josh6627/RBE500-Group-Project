@@ -86,9 +86,12 @@ class ForwardKinematics : public rclcpp::Node {
 
         Eigen::Matrix4d transform;
 
-        transform << ct, -st * ca, st * sa, a * ct, st, ct * ca, -ct * sa, a * st, 0, sa, ca, d, 0,
-            0, 0, 1;
-
+        // clang-format off
+        transform << ct, -st * ca,  st * sa, a * ct, 
+                     st,  ct * ca, -ct * sa, a * st, 
+                      0,       sa,       ca,      d, 
+                      0,        0,        0,      1;
+        // clang-format on
         return transform;
     }
 
