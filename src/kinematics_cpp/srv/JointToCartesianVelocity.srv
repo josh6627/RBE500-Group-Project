@@ -1,0 +1,5 @@
+float64[3] joint_velocity
+---
+bool success
+string message
+geometry_msgs/Twist cartesian_velocity
