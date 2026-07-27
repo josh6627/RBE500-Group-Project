@@ -87,11 +87,30 @@ class VelocityKinematics final : public rclcpp::Node {
     }
 
     void topic_callback(JointState::ConstSharedPtr msg) {
-        if (msg->position.size() != 3) {
+        if (msg->name.size() != msg->position.size()) {
+            RCLCPP_WARN(get_logger(), "JointState names and positions have different sizes");
+            return;
+        }
+        bool found_joint_1 = false;
+        bool found_joint_2 = false;
+        bool found_joint_3 = false;
+
+        for (std::size_t i = 0; i < msg->name.size(); i++) {
+            if (msg->name[i] == "joint_1") {
+                joint_variables_[0] = msg->position[i];
+                found_joint_1 = true;
+            } else if (msg->name[i] == "joint_2") {
+                joint_variables_[1] = msg->position[i];
+                found_joint_2 = true;
+            } else if (msg->name[i] == "joint_3") {
+                joint_variables_[2] = msg->position[i];
+                found_joint_3 = true;
+            }
+        }
+        if (!found_joint_1 || !found_joint_2 || !found_joint_3) {
             RCLCPP_WARN(get_logger(), "Expected 3 joint positions");
             return;
         }
-        joint_variables_ = msg->position;
     }
 
     void joint_velocities_service(
@@ -99,9 +118,9 @@ class VelocityKinematics final : public rclcpp::Node {
         srv::CartesianToJointVelocity::Response::SharedPtr response
     ) {
         const Eigen::Vector3d EE_twist(
-            request->cartesian_velocity.linear.x,
-            request->cartesian_velocity.linear.y,
-            request->cartesian_velocity.linear.z
+            request->end_effector_velocity.linear.x,
+            request->end_effector_velocity.linear.y,
+            request->end_effector_velocity.linear.z
         );
         const Eigen::Matrix3d jacobian = calculate_jacobian(
             joint_variables_[0],
@@ -168,7 +187,7 @@ class VelocityKinematics final : public rclcpp::Node {
     double joint_3_min_{};
     double joint_3_max_{};
 
-    std::vector<double> joint_variables_;
+    std::vector<double> joint_variables_{0.0, 0.0, 0.0};
 
     rclcpp::Subscription<JointState>::SharedPtr joint_subscription_;
     rclcpp::Service<srv::CartesianToJointVelocity>::SharedPtr joint_velocity_service_;
