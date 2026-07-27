@@ -96,16 +96,16 @@ double PID::compute(double input, double dt) {
     error = target - input;
 
     if (dt > 1.0e-6)
-        derivative = error - prev_error;
+        derivative = (error - prev_error) / dt;
     else
         derivative = 0.0;
 
     if (constants.ki != 0.0) {
         if (std::fabs(error) < constants.start_i)
-            integral += error;
+            integral += error * dt;
 
         if (error * prev_error < 0.0)
-            integral = 0;
+            integral = 0.0;
     }
 
     output = (error * constants.kp) + (integral * constants.ki) + (derivative * constants.kd) +
