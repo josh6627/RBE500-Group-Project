@@ -64,7 +64,7 @@
   </link>
 
   <!-- Joint 1 remains fixed for the current assignment -->
-  <joint name="joint_1" type="fixed">
+  <joint name="joint_1" type="revolute">
     <parent link="base"/>
     <child link="link_1"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -118,7 +118,7 @@
   </link>
 
   <!-- Joint 2 remains fixed for the current assignment -->
-  <joint name="joint_2" type="fixed">
+  <joint name="joint_2" type="revolute">
     <parent link="link_1"/>
     <child link="link_2"/>
     <origin xyz="1.0 0 1.0" rpy="0 0 0"/>
@@ -256,15 +256,31 @@
       name="gz::sim::systems::JointStatePublisher">
 
       <topic>/joint_states</topic>
-      <joint_name>joint_3</joint_name>
     </plugin>
   </gazebo>
 
+  <!-- Apply force commands to joint_1 -->
+  <gazebo>
+    <plugin
+      filename="gz-sim-apply-joint-force-system"
+      name="gz::sim::systems::ApplyJointForceJoint1">
+
+      <joint_name>joint_3</joint_name>
+    </plugin>
+  </gazebo>  <!-- Apply force commands to joint_2 -->
+  <gazebo>
+    <plugin
+      filename="gz-sim-apply-joint-force-system"
+      name="gz::sim::systems::ApplyJointForceJoint2">
+
+      <joint_name>joint_3</joint_name>
+    </plugin>
+  </gazebo>
   <!-- Apply force commands to joint_3 -->
   <gazebo>
     <plugin
       filename="gz-sim-apply-joint-force-system"
-      name="gz::sim::systems::ApplyJointForce">
+      name="gz::sim::systems::ApplyJointForceJoint3">
 
       <joint_name>joint_3</joint_name>
     </plugin>
