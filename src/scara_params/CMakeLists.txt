@@ -10,10 +10,9 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
-install(
-  DIRECTORY urdf launch
-  DESTINATION share/${PROJECT_NAME}
-)
+# install(
+#   DESTINATION share/${PROJECT_NAME}
+# )
 
 # Find the interface generator
 find_package(rosidl_default_generators REQUIRED)
