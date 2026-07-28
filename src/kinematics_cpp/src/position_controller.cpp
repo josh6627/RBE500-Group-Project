@@ -196,7 +196,8 @@ class PositionController final : public rclcpp::Node {
 
         for (std::size_t i = 0; i < request->joint_names.size(); i++) {
             const std::size_t joint_index = joint_indices_.at(request->joint_names[i]);
-            joint_pids_[joint_index].set_target(request->targets[i]);
+            double target_radians = request->targets[i] * M_PI / 180.0;
+            joint_pids_[joint_index].set_target(target_radians);
         }
 
         response->success = true;
@@ -218,6 +219,11 @@ class PositionController final : public rclcpp::Node {
         for (std::size_t i = 0; i < joint_names_.size(); i++) {
             std_msgs::msg::Float64 effort;
             effort.data = joint_pids_[i].compute(joint_positions_[i], dt);
+
+            if (joint_names_[i] == "joint_3") {
+                constexpr double gravity_compensation = -4.905;
+                effort.data += gravity_compensation;
+            }
             effort.data = std::clamp(effort.data, -10.0, 10.0);
             effort_publishers_[i]->publish(effort);
             // RCLCPP_INFO(get_logger(), "%s: %.2f", joint_names_[i].c_str(), joint_pids_[i].error);
