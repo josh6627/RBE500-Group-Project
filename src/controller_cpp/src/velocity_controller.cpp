@@ -1,25 +1,18 @@
-#include "kinematics_cpp/PID.hpp"
-#include "kinematics_cpp/srv/set_joint_target.hpp"
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
+#include "controller_cpp/PID.hpp"
+#include "controller_cpp/srv/set_joint_velocity.hpp"
 #include "rclcpp/rclcpp.hpp" // IWYU pragma: keep
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/float64.hpp"
-#include <chrono>
-#include <cmath>
 #include <cstddef>
-#include <memory>
-#include <rclcpp/node_interfaces/node_parameters_interface.hpp>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <rclcpp/time.hpp>
 
-namespace kinematics_cpp {
-class PositionController final : public rclcpp::Node {
+namespace controller_cpp {
+class VelocityController final : public rclcpp::Node {
     using JointState = sensor_msgs::msg::JointState;
-    using SetJointTarget = srv::SetJointTarget;
+    using SetJointVelocity = controller_cpp::srv::SetJointVelocity;
 
   public:
-    PositionController() : Node("position_controller") {
+    VelocityController() : Node("velocity_controller") {
         declare_parameters();
         load_parameters();
         parameter_callback_handle_ = this->add_on_set_parameters_callback(
@@ -30,15 +23,14 @@ class PositionController final : public rclcpp::Node {
         joint_state_subscriber_ = this->create_subscription<JointState>(
             "/joint_states",
             10,
-            [this](JointState::ConstSharedPtr msg) { this->joint_position_callback(msg); }
+            [this](JointState::ConstSharedPtr msg) { this->joint_velocity_callback(msg); }
         );
-
-        joint_targets_service_ = this->create_service<SetJointTarget>(
-            "set_joint_target",
+        joint_target_velocities_service_ = this->create_service<SetJointVelocity>(
+            "/set_joint_target",
             [this](
-                SetJointTarget::Request::ConstSharedPtr request,
-                SetJointTarget::Response::SharedPtr response
-            ) { target_service(request, response); }
+                SetJointVelocity::Request::ConstSharedPtr request,
+                SetJointVelocity::Response::SharedPtr response
+            ) { target_velocity_service(request, response); }
         );
 
         previous_time_ = this->get_clock()->now();
@@ -76,7 +68,7 @@ class PositionController final : public rclcpp::Node {
     void load_parameters() {
         model_name_ = get_parameter("model_name").as_string();
         joint_names_ = get_parameter("joint_names").as_string_array();
-        joint_positions_.assign(joint_names_.size(), 0.0);
+        joint_velocities_.assign(joint_names_.size(), 0.0);
 
         joint_pids_.clear();
         joint_indices_.clear();
@@ -146,16 +138,12 @@ class PositionController final : public rclcpp::Node {
 
         return result;
     }
-    /**
-     * @brief Callback to get current joint positions
-     *
-     * @param msg
-     */
-    void joint_position_callback(JointState::ConstSharedPtr msg) {
-        bool updated_position = false;
+
+    void joint_velocity_callback(JointState::ConstSharedPtr msg) {
+        bool updated_velocity = false;
         // Iterate through the joints in the message
         for (std::size_t msg_index = 0; msg_index < msg->name.size(); msg_index++) {
-            if (msg_index >= msg->position.size()) {
+            if (msg_index >= msg->velocity.size()) {
                 continue;
             }
             // find the map entry that corresponds to the current msg index
@@ -166,67 +154,56 @@ class PositionController final : public rclcpp::Node {
             // find the map index for the same joint
             const std::size_t joint_index = it->second;
             // store the position in the correct order
-            joint_positions_[joint_index] = msg->position[msg_index];
+            joint_velocities_[joint_index] = msg->velocity[msg_index];
 
-            updated_position = true;
+            updated_velocity = true;
         }
-        if (updated_position) {
+        if (updated_velocity) {
             recevied_joint_state_ = true;
         }
     }
 
-    void target_service(
-        SetJointTarget::Request::ConstSharedPtr request,
-        SetJointTarget::Response::SharedPtr response
+    void target_velocity_service(
+        SetJointVelocity::Request::ConstSharedPtr request,
+        SetJointVelocity::Response::SharedPtr response
     ) {
-        if (request->joint_names.size() != request->targets.size()) {
+        if (request->joint_names.size() != request->joint_velocities.size()) {
             response->success = false;
-            response->message = "Error: Joint names and Targets must have same size";
-            return;
+            response->message = "Error: Joint names and velocities must be the same size";
         }
-
-        // Validate names before changing targets
         for (const auto &joint_name : request->joint_names) {
             if (joint_indices_.find(joint_name) == joint_indices_.end()) {
                 response->success = false;
-                response->message = "Unknown Joint: " + joint_name;
-                return;
+                response->message = "Error: Unknown joint" + joint_name;
             }
         }
-
-        for (std::size_t i = 0; i < request->joint_names.size(); i++) {
+        for (std::size_t i = 0; request->joint_names.size(); i++) {
             const std::size_t joint_index = joint_indices_.at(request->joint_names[i]);
-            double target_radians = request->targets[i] * M_PI / 180.0;
-            joint_pids_[joint_index].set_target(target_radians);
+            joint_pids_[joint_index].set_target(joint_velocities_[i]);
         }
 
         response->success = true;
-        response->message = "Joint targets updated sucessfully";
+        response->message = "Joint velocities updated successfully";
     }
 
     void control_loop() {
-
-        if (!recevied_joint_state_)
+        if (!recevied_joint_state_) {
             return;
-
+        }
         const rclcpp::Time current_time = this->get_clock()->now();
         const double dt = (current_time - previous_time_).seconds();
         previous_time_ = current_time;
 
-        if (dt <= 1.0e-6) {
+        if (dt <= 1e-6) {
             return;
         }
+
         for (std::size_t i = 0; i < joint_names_.size(); i++) {
             std_msgs::msg::Float64 effort;
-            effort.data = joint_pids_[i].compute(joint_positions_[i], dt);
+            effort.data = joint_pids_[i].compute(joint_velocities_[i], dt);
 
-            if (joint_names_[i] == "joint_3") {
-                constexpr double gravity_compensation = -4.905;
-                effort.data += gravity_compensation;
-            }
             effort.data = std::clamp(effort.data, -10.0, 10.0);
             effort_publishers_[i]->publish(effort);
-            // RCLCPP_INFO(get_logger(), "%s: %.2f", joint_names_[i].c_str(), joint_pids_[i].error);
         }
     }
 
@@ -234,7 +211,7 @@ class PositionController final : public rclcpp::Node {
     std::vector<std::string> joint_names_;
     std::vector<PID> joint_pids_;
     std::unordered_map<std::string, std::size_t> joint_indices_;
-    std::vector<double> joint_positions_;
+    std::vector<double> joint_velocities_;
     std::vector<std::string> effort_topics_;
     rclcpp::Time previous_time_;
     bool recevied_joint_state_ = false;
@@ -242,17 +219,7 @@ class PositionController final : public rclcpp::Node {
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Subscription<JointState>::SharedPtr joint_state_subscriber_;
-    rclcpp::Service<SetJointTarget>::SharedPtr joint_targets_service_;
+    rclcpp::Service<SetJointVelocity>::SharedPtr joint_target_velocities_service_;
     std::vector<rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr> effort_publishers_;
 };
-
-} // namespace kinematics_cpp
-
-int main(int argc, char *argv[]) {
-    rclcpp::init(argc, argv);
-
-    rclcpp::spin(std::make_shared<kinematics_cpp::PositionController>());
-
-    rclcpp::shutdown();
-    return 0;
-}
+} // namespace controller_cpp

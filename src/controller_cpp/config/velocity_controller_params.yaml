@@ -1,0 +1,32 @@
+velocity_controller:
+  ros__parameters:
+    model_name: arm
+
+    joint_names:
+      - joint_1
+      - joint_2
+      - joint_3
+
+    joint_1:
+      pid:
+        kp: 7.5
+        ki: 1.5
+        kd: 10.0
+        kf: 0.0
+        start_i: 0.25
+
+    joint_2:
+      pid:
+        kp: 10.0
+        ki: 0.0
+        kd: 7.5
+        kf: 0.0
+        start_i: 0.1
+
+    joint_3:
+      pid:
+        kp: 50.0
+        ki: 0.0
+        kd: 1.5
+        kf: 0.0
+        start_i: 0.05

@@ -28,5 +28,5 @@ position_controller:
         kp: 50.0
         ki: 0.0
         kd: 1.5
-        kf: -4.905
+        kf: 0.0
         start_i: 0.05

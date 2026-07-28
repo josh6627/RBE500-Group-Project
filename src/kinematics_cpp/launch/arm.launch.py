@@ -23,11 +23,12 @@ def generate_launch_description():
         launch_arguments={"gz_args": "-v 4 empty.sdf"}.items(),
     )
 
-    controller_params = os.path.join(
-        get_package_share_directory("kinematics_cpp"),
+    position_controller_params = os.path.join(
+        get_package_share_directory("controller_cpp"),
         "config",
         "position_controller_params.yaml",
         )
+    velocity_controller_params = os.path.join(get_package_share_directory("controller_cpp"), "config", "velocity_controller_params.yaml")
     
     spawn_arm = Node(
         package="ros_gz_sim",
@@ -86,15 +87,22 @@ def generate_launch_description():
         output="screen",
     )
 
-    controller_node = Node(
-        package="kinematics_cpp",
-        executable="controller",
-        parameters=[controller_params],
+    position_controller_node = Node(
+        package="controller_cpp",
+        executable="position_controller",
+        parameters=[position_controller_params],
+        output="screen",
+    )
+
+    velocity_controller_node = Node(
+        package="controller_cpp",
+        executable="velocity_controller",
+        parameters=[velocity_controller_params],
         output="screen",
     )
     velocity_kinematics_node = Node(
         package="kinematics_cpp",
-        executable="vel_kinematics",
+        executable="vel_kinecontroller_nodematics",
         parameters=[robot_geometry],
         output="screen",
 
@@ -121,7 +129,7 @@ def generate_launch_description():
                     on_start=[
                         fk_node,
                         ik_node,
-                        controller_node,
+                        position_controller_node,
                         velocity_kinematics_node,
                     ],
                 )

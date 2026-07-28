@@ -1,28 +1,21 @@
 cmake_minimum_required(VERSION 3.8)
-project(kinematics_cpp)
+project(controller_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# ROS dependencies
+# find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-
-# Eigen
-find_package(eigen3_cmake_module REQUIRED)
-find_package(Eigen3 REQUIRED)
 
 # Custom services
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "srv/IK.srv"
-  "srv/CartesianToJointVelocity.srv"
-  "srv/JointToCartesianVelocity.srv"
-  DEPENDENCIES geometry_msgs
+  "srv/SetJointTarget.srv"
+  "srv/SetJointVelocity.srv"
 )
 
 # Get the generated C++ interface library
@@ -32,68 +25,61 @@ rosidl_get_typesupport_target(
   "rosidl_typesupport_cpp"
 )
 
-# Executables
-add_executable(fwd_kinematics
-  src/fwd_kinematics.cpp
+# PID library
+add_library(pid
+  src/PID.cpp
 )
 
-add_executable(inv_kinematics
-  src/inv_kinematics.cpp
+add_executable(position_controller
+  src/position_controller.cpp
 )
 
-add_executable(vel_kinematics
-  src/velocity_kinematics.cpp
+add_executable(velocity_controller
+  src/velocity_controller.cpp
 )
 
-# ROS dependencies
-ament_target_dependencies(fwd_kinematics
-  rclcpp
-  sensor_msgs
-  geometry_msgs
-)
-
-ament_target_dependencies(inv_kinematics
+ament_target_dependencies(position_controller
   rclcpp
   std_msgs
-  geometry_msgs
-)
-
-ament_target_dependencies(vel_kinematics
-  rclcpp
   sensor_msgs
   geometry_msgs
 )
 
-# Link libraries
-target_link_libraries(fwd_kinematics
-  Eigen3::Eigen
+ament_target_dependencies(velocity_controller
+  rclcpp
+  std_msgs
+  sensor_msgs
 )
 
-target_link_libraries(inv_kinematics
-  Eigen3::Eigen
+target_include_directories(pid
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(position_controller
+  pid
+  "${cpp_typesupport_target}"
+)
+target_link_libraries(velocity_controller
+  pid
   "${cpp_typesupport_target}"
 )
 
-target_link_libraries(vel_kinematics
-  Eigen3::Eigen
-  "${cpp_typesupport_target}"
-)
-
-# Ensure generated service headers exist before compiling
-add_dependencies(inv_kinematics
+add_dependencies(position_controller
   ${PROJECT_NAME}__rosidl_generator_cpp
 )
 
-add_dependencies(vel_kinematics
+add_dependencies(velocity_controller
   ${PROJECT_NAME}__rosidl_generator_cpp
 )
 
 # Install targets
 install(
   TARGETS
-    fwd_kinematics
-    inv_kinematics
-    vel_kinematics
+    pid
+    position_controller
+    velocity_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -105,7 +91,7 @@ install(
 )
 
 install(
-  DIRECTORY launch
+  DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -114,7 +100,12 @@ ament_export_dependencies(rosidl_default_runtime)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
+  # the following line skips cpplint (only works in a git repo)
+  # comment the line when this package is in a git repo and when
+  # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
