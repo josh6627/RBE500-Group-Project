@@ -109,7 +109,7 @@ double PID::compute(double input, double dt) {
     }
 
     output = (error * constants.kp) + (integral * constants.ki) + (derivative * constants.kd) +
-             target * constants.kf;
+             (target * constants.kf);
 
     prev_error = error;
     return output;
